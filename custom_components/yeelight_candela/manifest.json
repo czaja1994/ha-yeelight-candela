@@ -1,0 +1,20 @@
+{
+  "domain": "yeelight_candela",
+  "name": "Yeelight Candela",
+  "bluetooth": [
+    {
+      "connectable": true,
+      "local_name": "yeelight_ms",
+      "service_uuid": "0000fe87-0000-1000-8000-00805f9b34fb"
+    }
+  ],
+  "codeowners": ["@czaja1994"],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "https://github.com/czaja1994/ha-yeelight-candela",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/czaja1994/ha-yeelight-candela/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,46 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Choose a Yeelight Candela lamp to set up.",
+        "data": {
+          "address": "Lamp"
+        }
+      },
+      "bluetooth_confirm": {
+        "description": "Do you want to set up {name}?"
+      }
+    },
+    "abort": {
+      "already_in_progress": "Setup of this lamp is already in progress.",
+      "already_configured": "This lamp is already configured.",
+      "no_devices_found": "No unconfigured Yeelight Candela lamps were found. Make sure the lamp is within range of a Bluetooth adapter or proxy.",
+      "not_supported": "This Yeelight Bluetooth device is not a Candela lamp."
+    }
+  },
+  "exceptions": {
+    "device_not_found": {
+      "message": "Could not find the lamp {address}. Make sure it is within range of a Bluetooth adapter or proxy."
+    },
+    "cannot_connect": {
+      "message": "Could not connect to the lamp {address}."
+    },
+    "command_failed": {
+      "message": "Could not send the command to the lamp {name}."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Yeelight Candela options",
+        "data": {
+          "keep_connected": "Keep connection open"
+        },
+        "data_description": {
+          "keep_connected": "Keep the Bluetooth connection open and restore it automatically when it drops. Commands then react instantly. Use it for lamps that are slow or unreliable to connect to; it permanently uses one connection slot of the Bluetooth adapter or proxy."
+        }
+      }
+    }
+  }
+}

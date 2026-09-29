@@ -1,0 +1,46 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Wybierz lampkę Yeelight Candela do skonfigurowania.",
+        "data": {
+          "address": "Lampka"
+        }
+      },
+      "bluetooth_confirm": {
+        "description": "Czy chcesz skonfigurować {name}?"
+      }
+    },
+    "abort": {
+      "already_in_progress": "Konfiguracja tej lampki jest już w toku.",
+      "already_configured": "Ta lampka jest już skonfigurowana.",
+      "no_devices_found": "Nie znaleziono nieskonfigurowanych lampek Yeelight Candela. Upewnij się, że lampka jest w zasięgu adaptera lub proxy Bluetooth.",
+      "not_supported": "To urządzenie Yeelight Bluetooth nie jest lampką Candela."
+    }
+  },
+  "exceptions": {
+    "device_not_found": {
+      "message": "Nie znaleziono lampki {address}. Upewnij się, że jest w zasięgu adaptera lub proxy Bluetooth."
+    },
+    "cannot_connect": {
+      "message": "Nie udało się połączyć z lampką {address}."
+    },
+    "command_failed": {
+      "message": "Nie udało się wysłać polecenia do lampki {name}."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje Yeelight Candela",
+        "data": {
+          "keep_connected": "Utrzymuj połączenie"
+        },
+        "data_description": {
+          "keep_connected": "Utrzymuje połączenie Bluetooth i automatycznie je przywraca po zerwaniu. Komendy działają wtedy natychmiast. Przydatne dla lampek, które łączą się wolno lub zawodnie; na stałe zajmuje jeden slot połączeń adaptera lub proxy Bluetooth."
+        }
+      }
+    }
+  }
+}
