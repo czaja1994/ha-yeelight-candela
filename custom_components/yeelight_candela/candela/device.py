@@ -71,9 +71,13 @@ class CandelaDevice:
         retry_pause: float | None = None,
         keep_connected: bool = False,
         reconnect_delays: tuple[float, ...] | None = None,
+        client_class: type[BleakClientWithServiceCache] | None = None,
     ) -> None:
         self._ble_device = ble_device
         self._name = name
+        # Client class used to connect; a subclass can restrict the connection path
+        # (see bluetooth_source.pinned_client_class). None means the default client.
+        self._client_class = client_class
         # Keep the link open (no idle disconnect) and restore it in the background
         # when it drops: for lamps that are slow or unreliable to connect to.
         self._keep_connected = keep_connected
@@ -413,7 +417,7 @@ class CandelaDevice:
         if self._client is not None and self._client.is_connected:
             return self._client
         client = await establish_connection(
-            BleakClientWithServiceCache,
+            self._client_class or BleakClientWithServiceCache,
             self._ble_device,
             self.name,
             disconnected_callback=self._on_disconnected,
