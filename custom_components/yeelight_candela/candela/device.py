@@ -56,6 +56,8 @@ class CandelaState:
     brightness: int | None = None
     flicker: bool = False
     battery: int | None = None
+    # Last battery report, with the raw readings and whether the lamp is on its base.
+    battery_report: BatteryUpdate | None = None
 
 
 class CandelaDevice:
@@ -577,6 +579,7 @@ class CandelaDevice:
     def _apply_update(self, update: _Update) -> None:
         if isinstance(update, BatteryUpdate):
             self.state.battery = update.level
+            self.state.battery_report = update
             return
         if isinstance(update, StateUpdate):
             self.state.is_on = update.is_on
