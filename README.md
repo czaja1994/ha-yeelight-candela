@@ -29,6 +29,8 @@ stack, so it works with a built-in adapter, a USB dongle, or an
   command wins
 - Optional **Keep connection open** mode for lamps that are slow or unreliable
   to connect to
+- Optional **Bluetooth adapter or proxy** choice per lamp, so it always connects
+  through the same adapter or proxy
 
 ## Requirements
 
@@ -84,6 +86,27 @@ closes the link when idle, and reconnects automatically (after 5 s, 10 s, 30 s,
 then every 60 s) when it drops. Commands then react immediately. Use it for a
 lamp that often fails to connect. It permanently uses one of the adapter's or
 proxy's connection slots (an ESPHome proxy usually has 3).
+
+### Bluetooth adapter or proxy (per lamp)
+
+**Settings → Devices & services → Yeelight Candela → the lamp → ⚙ Configure →
+Bluetooth adapter or proxy.**
+
+*Automatic* by default: Home Assistant picks the adapter or proxy with the best
+signal on every connection. Choose one to always connect through it. The list
+shows each connectable adapter and proxy with the lamp's signal there.
+
+This matters because only an ESPHome proxy can deliver the lamp's state (see
+[How it works](#how-it-works)). If a local adapter hears the lamp a few dB better
+than the proxy next to it, Home Assistant keeps choosing the local adapter and the
+lamp stays in *assumed state*. Pin the lamp to the proxy to avoid that.
+
+While the chosen adapter or proxy is offline, Home Assistant picks another one so
+the lamp stays controllable. While it is online but does not hear the lamp, or has
+no free connection slot, commands to the lamp fail until it does.
+
+Pinning builds on internals of Home Assistant's Bluetooth stack (`habluetooth`).
+If they change, the integration logs a warning and falls back to automatic.
 
 ## How it works
 
