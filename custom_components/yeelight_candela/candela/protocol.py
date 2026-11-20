@@ -15,8 +15,11 @@ CMD_POWER = 0x40
 CMD_BRIGHTNESS = 0x42
 CMD_GET_STATE = 0x44
 CMD_FLICKER = 0x67
+# Battery query and report (Yeelight app: READGINGKOBATTERY / BATTERYNOTIFICATION).
+CMD_GET_BATTERY = 0xA0
 RSP_STATE = 0x45
 RSP_FLICKER = 0x63
+RSP_BATTERY = 0xA1
 
 POWER_ON = 0x01
 POWER_OFF = 0x02
@@ -41,6 +44,13 @@ class FlickerUpdate:
     """Candle flicker mode reported by the lamp."""
 
     active: bool
+
+
+@dataclass(frozen=True)
+class BatteryUpdate:
+    """Battery level reported by the lamp, in percent."""
+
+    level: int
 
 
 def _frame(*payload: int) -> bytes:
@@ -72,6 +82,10 @@ def build_get_state() -> bytes:
     return _frame(CMD_GET_STATE)
 
 
+def build_get_battery() -> bytes:
+    return _frame(CMD_GET_BATTERY, 0x00)
+
+
 def build_exit_flicker(pct: int) -> list[bytes]:
     """Frames that leave candle flicker mode and keep the lamp on at `pct`.
 
@@ -81,7 +95,7 @@ def build_exit_flicker(pct: int) -> list[bytes]:
     return [build_brightness(pct)]
 
 
-def parse_notification(data: bytes) -> StateUpdate | FlickerUpdate | None:
+def parse_notification(data: bytes) -> StateUpdate | FlickerUpdate | BatteryUpdate | None:
     """Decode a notification; return None for anything not understood."""
     if len(data) < 3 or data[0] != PREFIX:
         return None
@@ -92,4 +106,6 @@ def parse_notification(data: bytes) -> StateUpdate | FlickerUpdate | None:
         return StateUpdate(is_on=value == POWER_ON, brightness=clamp_brightness(data[3]))
     if kind == RSP_FLICKER and value in (FLICKER_ON, FLICKER_OFF):
         return FlickerUpdate(active=value == FLICKER_ON)
+    if kind == RSP_BATTERY and 0 <= value <= 100:
+        return BatteryUpdate(level=value)
     return None
