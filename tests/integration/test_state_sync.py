@@ -88,7 +88,7 @@ async def test_poll_corrects_state_changed_by_hand(
     attempts = lamps[ADDRESS].connection_attempts
     await poll(dt_util.utcnow())
     await hass.async_block_till_done()
-    assert lamps[ADDRESS].frames[-1] == protocol.build_get_state()
+    assert lamps[ADDRESS].frames[-2:] == [protocol.build_get_state(), protocol.build_get_battery()]
     assert lamps[ADDRESS].connection_attempts == attempts + 1
     assert not entry.runtime_data.is_connected  # the poll used a short connection
     assert hass.states.get(ENTITY_ID).state == STATE_OFF

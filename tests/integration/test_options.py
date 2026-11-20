@@ -209,7 +209,7 @@ async def test_kept_link_is_polled_even_without_lamp_reports(
     lamps[ADDRESS].fail_writes = 1  # the kept link died without the proxy noticing
     await poll(dt_util.utcnow())
     await hass.async_block_till_done()
-    assert lamps[ADDRESS].frames[-1] == protocol.build_get_state()
+    assert lamps[ADDRESS].frames[-2:] == [protocol.build_get_state(), protocol.build_get_battery()]
     assert lamps[ADDRESS].connection_attempts == attempts + 1  # replaced by a new link
     assert entry.runtime_data.is_connected
 
