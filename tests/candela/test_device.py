@@ -183,6 +183,7 @@ async def test_reads_are_neither_superseded_nor_superseding(device, lamp):
         protocol.build_get_state(),
         protocol.build_off(),
         protocol.build_get_state(),
+        protocol.build_get_battery(),
     ]
     assert device.state.is_on is False
 
