@@ -24,6 +24,9 @@ _LOGGER = logging.getLogger(__name__)
 
 IDLE_DISCONNECT_SECONDS = 60.0
 RESPONSE_TIMEOUT_SECONDS = 1.0
+# Upper bound for subscribing to notifications. The notify characteristic has no
+# CCCD, and some backends never answer the subscription request.
+NOTIFY_TIMEOUT_SECONDS = 5.0
 # Upper bound for one command, including waiting for earlier commands and connecting.
 # Within it a command keeps reconnecting until the lamp takes it: some lamps accept
 # only a fraction of connection attempts.
@@ -55,6 +58,12 @@ class CandelaState:
     is_on: bool | None = None
     brightness: int | None = None
     flicker: bool = False
+
+
+def _is_bluez(client: object) -> bool:
+    """Whether the client talks to a local adapter through BlueZ."""
+    backend = getattr(client, "_backend", None)
+    return "bluezdbus" in type(backend).__module__
 
 
 class CandelaDevice:
@@ -425,8 +434,14 @@ class CandelaDevice:
         # Reached once: later failures are reconnects, not "not reachable yet".
         self._report_unreachable = False
         try:
-            await client.start_notify(protocol.NOTIFY_CHAR_UUID, self._on_notification)
-        except BleakError as err:
+            if _is_bluez(client):
+                # BlueZ never answers StartNotify on a characteristic without a CCCD,
+                # and cancelling the call leaves the ATT request pending, which stalls
+                # every following write on this link. Do not try.
+                raise BleakError("BlueZ cannot subscribe to a characteristic without a CCCD")
+            async with asyncio.timeout(NOTIFY_TIMEOUT_SECONDS):
+                await client.start_notify(protocol.NOTIFY_CHAR_UUID, self._on_notification)
+        except (BleakError, TimeoutError) as err:
             if await self._start_proxy_notify(client):
                 _LOGGER.debug(
                     "%s: %s; registered notifications on the proxy directly", self.name, err
