@@ -106,6 +106,9 @@ def parse_notification(data: bytes) -> StateUpdate | FlickerUpdate | BatteryUpda
         return StateUpdate(is_on=value == POWER_ON, brightness=clamp_brightness(data[3]))
     if kind == RSP_FLICKER and value in (FLICKER_ON, FLICKER_OFF):
         return FlickerUpdate(active=value == FLICKER_ON)
-    if kind == RSP_BATTERY and 0 <= value <= 100:
-        return BatteryUpdate(level=value)
+    if kind == RSP_BATTERY and len(data) >= 4 and 0 <= data[3] <= 100:
+        # Seen on firmware V1.F (lamp on its base, full): 43 A1 03 64 0A 4D 08 69 ...
+        # Byte 3 is the level in percent (0x64 = 100). Byte 2 and bytes 4-7 are not
+        # decoded yet (byte 2 probably the charging state).
+        return BatteryUpdate(level=data[3])
     return None
