@@ -25,6 +25,9 @@ class FakeLamp:
         self.brightness = brightness
         self.flicker = False
         self.notify = notify
+        self.battery = 100
+        # Battery report status byte: 0x02 charging, 0x03 not charging.
+        self.battery_status = 0x03
         self.frames: list[bytes] = []
         self.devices: list[BLEDevice] = []
         self.fail_connect = False
@@ -70,6 +73,11 @@ class FakeLamp:
         if command == protocol.CMD_FLICKER:
             self.flicker = True
             return [pad(protocol.PREFIX, protocol.RSP_FLICKER, protocol.FLICKER_ON)]
+        if command == protocol.CMD_GET_BATTERY:
+            raw = (0x0A, 0x71, 0x08, 0xEB)  # captured on the base, full
+            return [
+                pad(protocol.PREFIX, protocol.RSP_BATTERY, self.battery_status, self.battery, *raw)
+            ]
         return []
 
 
