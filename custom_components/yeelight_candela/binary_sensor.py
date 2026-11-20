@@ -21,8 +21,11 @@ async def async_setup_entry(
     entry: CandelaConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the external power sensor for a config entry."""
-    async_add_entities([CandelaPower(entry.runtime_data, entry.unique_id, entry.title)])
+    """Add the external power and charging sensors for a config entry."""
+    device, address, title = entry.runtime_data, entry.unique_id, entry.title
+    async_add_entities(
+        [CandelaPower(device, address, title), CandelaCharging(device, address, title)]
+    )
 
 
 class CandelaPower(BinarySensorEntity):
@@ -57,3 +60,18 @@ class CandelaPower(BinarySensorEntity):
     def is_on(self) -> bool | None:
         report = self._device.state.battery_report
         return None if report is None else report.on_power
+
+
+class CandelaCharging(CandelaPower):
+    """On while the battery is charging; unknown until the lamp reports."""
+
+    _attr_device_class = BinarySensorDeviceClass.BATTERY_CHARGING
+
+    def __init__(self, device: CandelaDevice, address: str, title: str) -> None:
+        super().__init__(device, address, title)
+        self._attr_unique_id = f"{address}_charging"
+
+    @property
+    def is_on(self) -> bool | None:
+        report = self._device.state.battery_report
+        return None if report is None else report.charging
