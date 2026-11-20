@@ -60,3 +60,11 @@ class CandelaBattery(SensorEntity):
     @property
     def native_value(self) -> int | None:
         return self._device.state.battery
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int] | None:
+        """Raw readings of the last report, kept for decoding them later."""
+        report = self._device.state.battery_report
+        if report is None or report.input_raw is None or report.battery_raw is None:
+            return None
+        return {"input_raw": report.input_raw, "battery_raw": report.battery_raw}
