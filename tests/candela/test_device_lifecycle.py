@@ -190,7 +190,7 @@ async def test_disconnect_swallows_backend_errors(device, lamp, clients):
 async def test_poll_uses_short_connection(device, lamp, clients):
     lamp.is_on = False
     await device.poll()
-    assert lamp.frames == [protocol.build_get_state()]
+    assert lamp.frames == [protocol.build_get_state(), protocol.build_get_battery()]
     assert device.state.is_on is False
     assert not device.is_connected
     assert not clients[-1].is_connected
@@ -199,7 +199,7 @@ async def test_poll_uses_short_connection(device, lamp, clients):
 async def test_poll_keeps_open_connection(device, lamp, clients):
     await device.turn_on()
     await device.poll()
-    assert lamp.frames[-1] == protocol.build_get_state()
+    assert lamp.frames[-2:] == [protocol.build_get_state(), protocol.build_get_battery()]
     assert lamp.connection_attempts == 1
     assert device.is_connected
     await asyncio.sleep(0.3)  # the idle timer still closes it

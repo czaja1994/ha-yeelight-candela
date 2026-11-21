@@ -18,7 +18,7 @@ from bleak_retry_connector import (
 
 from . import protocol
 from .esphome_notify import start_notify_without_cccd
-from .protocol import FlickerUpdate, StateUpdate
+from .protocol import BatteryUpdate, FlickerUpdate, StateUpdate
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ RECONNECT_DELAYS_SECONDS = (5.0, 10.0, 30.0, 60.0)
 
 _COMMAND_ERRORS = (BleakError, *BLEAK_RETRY_EXCEPTIONS)
 
-type _Update = StateUpdate | FlickerUpdate
+type _Update = StateUpdate | FlickerUpdate | BatteryUpdate
 
 
 class CandelaError(Exception):
@@ -55,6 +55,9 @@ class CandelaState:
     is_on: bool | None = None
     brightness: int | None = None
     flicker: bool = False
+    battery: int | None = None
+    # Last battery report, with the raw readings and whether the lamp is on its base.
+    battery_report: BatteryUpdate | None = None
 
 
 class CandelaDevice:
@@ -71,9 +74,13 @@ class CandelaDevice:
         retry_pause: float | None = None,
         keep_connected: bool = False,
         reconnect_delays: tuple[float, ...] | None = None,
+        client_class: type[BleakClientWithServiceCache] | None = None,
     ) -> None:
         self._ble_device = ble_device
         self._name = name
+        # Client class used to connect; a subclass can restrict the connection path
+        # (see bluetooth_source.pinned_client_class). None means the default client.
+        self._client_class = client_class
         # Keep the link open (no idle disconnect) and restore it in the background
         # when it drops: for lamps that are slow or unreliable to connect to.
         self._keep_connected = keep_connected
@@ -232,7 +239,7 @@ class CandelaDevice:
         reconnecting until `time_limit` (default: the command timeout) like a command.
         """
         await self._send(
-            lambda: [protocol.build_get_state()],
+            lambda: [protocol.build_get_state(), protocol.build_get_battery()],
             short=True,
             persistent=persistent,
             time_limit=time_limit,
@@ -413,7 +420,7 @@ class CandelaDevice:
         if self._client is not None and self._client.is_connected:
             return self._client
         client = await establish_connection(
-            BleakClientWithServiceCache,
+            self._client_class or BleakClientWithServiceCache,
             self._ble_device,
             self.name,
             disconnected_callback=self._on_disconnected,
@@ -544,7 +551,10 @@ class CandelaDevice:
                 await self._disconnect_locked()
 
     def _on_notification(self, _characteristic: object, data: bytearray) -> None:
-        update = protocol.parse_notification(bytes(data))
+        frame = bytes(data)
+        update = protocol.parse_notification(frame)
+        if update is None or isinstance(update, BatteryUpdate):
+            _LOGGER.debug("%s: notification %s -> %s", self.name, frame.hex(" "), update)
         if update is None:
             return
         self.reports_state = True
@@ -567,6 +577,10 @@ class CandelaDevice:
             self.state.flicker = flicker
 
     def _apply_update(self, update: _Update) -> None:
+        if isinstance(update, BatteryUpdate):
+            self.state.battery = update.level
+            self.state.battery_report = update
+            return
         if isinstance(update, StateUpdate):
             self.state.is_on = update.is_on
             self.state.brightness = update.brightness

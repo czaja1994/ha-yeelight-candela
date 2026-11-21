@@ -29,6 +29,11 @@ stack, so it works with a built-in adapter, a USB dongle, or an
   command wins
 - Optional **Keep connection open** mode for lamps that are slow or unreliable
   to connect to
+- Optional **Bluetooth adapter or proxy** choice per lamp, so it always connects
+  through the same adapter or proxy
+- **Battery level**, **charging** and **external power** (diagnostic entities),
+  read with the state poll when the lamp can report (see
+  [How it works](#how-it-works))
 
 ## Requirements
 
@@ -85,6 +90,27 @@ then every 60 s) when it drops. Commands then react immediately. Use it for a
 lamp that often fails to connect. It permanently uses one of the adapter's or
 proxy's connection slots (an ESPHome proxy usually has 3).
 
+### Bluetooth adapter or proxy (per lamp)
+
+**Settings → Devices & services → Yeelight Candela → the lamp → ⚙ Configure →
+Bluetooth adapter or proxy.**
+
+*Automatic* by default: Home Assistant picks the adapter or proxy with the best
+signal on every connection. Choose one to always connect through it. The list
+shows each connectable adapter and proxy with the lamp's signal there.
+
+This matters because only an ESPHome proxy can deliver the lamp's state (see
+[How it works](#how-it-works)). If a local adapter hears the lamp a few dB better
+than the proxy next to it, Home Assistant keeps choosing the local adapter and the
+lamp stays in *assumed state*. Pin the lamp to the proxy to avoid that.
+
+While the chosen adapter or proxy is offline, Home Assistant picks another one so
+the lamp stays controllable. While it is online but does not hear the lamp, or has
+no free connection slot, commands to the lamp fail until it does.
+
+Pinning builds on internals of Home Assistant's Bluetooth stack (`habluetooth`).
+If they change, the integration logs a warning and falls back to automatic.
+
 ## How it works
 
 - **On-demand connection.** Without the keep-connected option the integration
@@ -107,6 +133,11 @@ proxy's connection slots (an ESPHome proxy usually has 3).
   never request. Both cases are recognised.
 - **Polling.** The state is read every 5 minutes (the lamp's advertisements do
   not change with its state).
+- **Battery.** Every poll also sends the battery query the Yeelight app uses.
+  The reply gives the level in percent and a status byte (`02` while charging).
+  Two further raw readings tell whether a full lamp still sits on its charger.
+  Like the state, the battery is only known through a backend that delivers the
+  lamp's notifications.
 
 ## Known limitations
 
@@ -167,6 +198,13 @@ Frames are 18 bytes, start with `0x43` and are zero-padded:
 | On / Off | `43 40 01` / `43 40 02` | `43 45 …` |
 | Brightness 1–100 | `43 42 <pct>` | `43 45 01 <pct> …` |
 | Candle flicker | `43 67 02` | `43 63 01` (`43 63 03` when it stops) |
+| Battery | `43 A0 00` | `43 A1 <status> <level %> <raw 1, 2 bytes> <raw 2, 2 bytes> …` |
+
+Battery replies seen (status, level, raw 1, raw 2): on the base and full
+`03 64 0A71 08EB`, without power `03 64 08E2 08D4`, on the charging cable
+`02 64 04AC 08D2`. Status `02` means charging. Raw 2 behaves like the battery
+voltage; raw 1 is well above it on a full lamp on its charger, about equal
+without power, and below it while charging.
 
 A brightness command also stops the flicker and turns an off lamp on. The lamps
 additionally expose a Telink mesh service (`00010203-0405-0607-0809-0a0b0c0d1910`),

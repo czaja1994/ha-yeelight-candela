@@ -13,7 +13,7 @@ from tests.integration.helpers import ADDRESS, inject, make_entry, payload_with_
 
 async def test_setup_reads_initial_state(hass: HomeAssistant, setup_entry, lamps) -> None:
     assert setup_entry.state is ConfigEntryState.LOADED
-    assert lamps[ADDRESS].frames == [protocol.build_get_state()]
+    assert lamps[ADDRESS].frames == [protocol.build_get_state(), protocol.build_get_battery()]
     assert setup_entry.runtime_data.state.is_on is True
 
 
@@ -53,7 +53,7 @@ async def test_setup_keeps_connecting_within_its_budget(
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED
-    assert lamps[ADDRESS].frames == [protocol.build_get_state()]
+    assert lamps[ADDRESS].frames == [protocol.build_get_state(), protocol.build_get_battery()]
     await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
 

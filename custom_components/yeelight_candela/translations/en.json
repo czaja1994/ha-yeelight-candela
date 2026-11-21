@@ -35,11 +35,20 @@
       "init": {
         "title": "Yeelight Candela options",
         "data": {
-          "keep_connected": "Keep connection open"
+          "keep_connected": "Keep connection open",
+          "bluetooth_source": "Bluetooth adapter or proxy"
         },
         "data_description": {
-          "keep_connected": "Keep the Bluetooth connection open and restore it automatically when it drops. Commands then react instantly. Use it for lamps that are slow or unreliable to connect to; it permanently uses one connection slot of the Bluetooth adapter or proxy."
+          "keep_connected": "Keep the Bluetooth connection open and restore it automatically when it drops. Commands then react instantly. Use it for lamps that are slow or unreliable to connect to; it permanently uses one connection slot of the Bluetooth adapter or proxy.",
+          "bluetooth_source": "Which Bluetooth adapter or proxy connects to the lamp. Automatic lets Home Assistant pick the one with the best signal on every connection. Choose one to always connect through it, for example an ESPHome proxy: through a local adapter the lamp cannot report its state. If the chosen adapter or proxy is offline, Home Assistant picks another one."
         }
+      }
+    }
+  },
+  "selector": {
+    "bluetooth_source": {
+      "options": {
+        "auto": "Automatic (best signal)"
       }
     }
   }

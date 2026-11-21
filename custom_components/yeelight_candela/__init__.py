@@ -16,13 +16,20 @@ from homeassistant.const import CONF_ADDRESS, EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 
+from .bluetooth_source import pinned_client_class
 from .candela import advertisement
 from .candela.device import CandelaDevice, CandelaError
-from .const import CONF_KEEP_CONNECTED, DOMAIN, SETUP_TIMEOUT_SECONDS
+from .const import (
+    CONF_BLUETOOTH_SOURCE,
+    CONF_KEEP_CONNECTED,
+    DOMAIN,
+    SETUP_TIMEOUT_SECONDS,
+    SOURCE_AUTOMATIC,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.LIGHT]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.LIGHT, Platform.SENSOR]
 
 type CandelaConfigEntry = ConfigEntry[CandelaDevice]
 
@@ -39,7 +46,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: CandelaConfigEntry) -> b
         )
 
     keep_connected = entry.options.get(CONF_KEEP_CONNECTED, False)
-    device = CandelaDevice(ble_device, name=entry.title, keep_connected=keep_connected)
+    source = entry.options.get(CONF_BLUETOOTH_SOURCE, SOURCE_AUTOMATIC)
+    pinned = source != SOURCE_AUTOMATIC
+    client_class = pinned_client_class(source) if pinned else None
+    if pinned and client_class is None:
+        _LOGGER.warning(
+            "%s: cannot pin the connection to Bluetooth source %s with this Home Assistant"
+            " version; Home Assistant picks the connection path",
+            entry.title,
+            source,
+        )
+    device = CandelaDevice(
+        ble_device, name=entry.title, keep_connected=keep_connected, client_class=client_class
+    )
     if not keep_connected:
         try:
             # Its own, shorter budget: a missing lamp must not hold up startup for long.
