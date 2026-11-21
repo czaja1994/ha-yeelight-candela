@@ -31,6 +31,9 @@ stack, so it works with a built-in adapter, a USB dongle, or an
   to connect to
 - Optional **Bluetooth adapter or proxy** choice per lamp, so it always connects
   through the same adapter or proxy
+- **Battery level**, **charging** and **external power** (diagnostic entities),
+  read with the state poll when the lamp can report (see
+  [How it works](#how-it-works))
 
 ## Requirements
 
@@ -130,6 +133,11 @@ If they change, the integration logs a warning and falls back to automatic.
   never request. Both cases are recognised.
 - **Polling.** The state is read every 5 minutes (the lamp's advertisements do
   not change with its state).
+- **Battery.** Every poll also sends the battery query the Yeelight app uses.
+  The reply gives the level in percent and a status byte (`02` while charging).
+  Two further raw readings tell whether a full lamp still sits on its charger.
+  Like the state, the battery is only known through a backend that delivers the
+  lamp's notifications.
 
 ## Known limitations
 
@@ -190,6 +198,13 @@ Frames are 18 bytes, start with `0x43` and are zero-padded:
 | On / Off | `43 40 01` / `43 40 02` | `43 45 …` |
 | Brightness 1–100 | `43 42 <pct>` | `43 45 01 <pct> …` |
 | Candle flicker | `43 67 02` | `43 63 01` (`43 63 03` when it stops) |
+| Battery | `43 A0 00` | `43 A1 <status> <level %> <raw 1, 2 bytes> <raw 2, 2 bytes> …` |
+
+Battery replies seen (status, level, raw 1, raw 2): on the base and full
+`03 64 0A71 08EB`, without power `03 64 08E2 08D4`, on the charging cable
+`02 64 04AC 08D2`. Status `02` means charging. Raw 2 behaves like the battery
+voltage; raw 1 is well above it on a full lamp on its charger, about equal
+without power, and below it while charging.
 
 A brightness command also stops the flicker and turns an off lamp on. The lamps
 additionally expose a Telink mesh service (`00010203-0405-0607-0809-0a0b0c0d1910`),
